@@ -6,7 +6,6 @@
   <img src="shields.io" alt="SQLite">
   <img src="shields.io" alt="HTML5">
 </p>
-
 ---
 
 ## 📝 О проекте
