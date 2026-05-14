@@ -1,12 +1,11 @@
 # 💬 MMDK Messenger
 
 <p align="center">
-  <img src="shields.io" alt="Python">
-  <img src="shields.io" alt="Flask">
-  <img src="shields.io" alt="SQLite">
-  <img src="shields.io" alt="HTML5">
+  <kbd><b>🐍 Python</b></kbd>
+  <kbd><b>⚡ Flask</b></kbd>
+  <kbd><b>🗄 SQLite</b></kbd>
+  <kbd><b>🎨 HTML5 / CSS3</b></kbd>
 </p>
----
 
 ## 📝 О проекте
 
