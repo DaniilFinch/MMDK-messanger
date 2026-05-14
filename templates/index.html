@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMDK Messenger</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+    <!-- Подключаем иконки для глаза -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 16px; /* СТАНДАРТ */
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .logo {
+            background: #a349a4; /* Точный фиолетовый цвет с вашего фото */
+            color: #fff;
+            width: 80px;
+            height: 80px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 22px;
+            font-style: italic;
+            margin: 0 auto 20px auto;
+        }
+        h1 { font-size: 28px; margin-bottom: 15px; color: #000; }
+        p { font-size: 16px; line-height: 1.6; color: #666; margin-bottom: 25px; }
+
+        .flash-messages { list-style: none; padding: 0; margin-bottom: 20px; }
+        .flash-item { padding: 12px; background-color: #e6ffed; color: #22863a; border: 1px solid #34d058; border-radius: 6px; font-size: 15px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 15px; }
+
+        .input-wrapper { position: relative; }
+        input {
+            width: 100%; padding: 14px; /* Увеличено для удобства */
+            font-size: 16px; border: 1px solid #ddd; border-radius: 8px;
+            box-sizing: border-box;
+        }
+        input:focus { border-color: #007bff; outline: none; box-shadow: 0 0 0 3px rgba(0,123,255,0.1); }
+
+        .toggle-password { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #999; }
+
+        .btn {
+            display: block; width: 100%; padding: 15px;
+            font-size: 16px; font-weight: bold; border-radius: 8px;
+            cursor: pointer; border: none; margin-bottom: 12px;
+            transition: all 0.3s;
+        }
+        .btn-primary { background-color: #1a1a2e; color: white; }
+        .btn-success { background-color: #1a1a2e; color: white; }
+        .btn-outline { background-color: transparent; border: 1px solid #ddd; color: #666; text-decoration: none; display: inline-block; width: 93%; }
+
+        .toggle-link { margin-top: 25px; font-size: 15px; }
+        .toggle-link span { color: #007bff; cursor: pointer; text-decoration: underline; }
+        .hidden { display: none; }
+        .error-msg { color: #dc3545; font-size: 14px; margin-top: 5px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="logo">MMDK</div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul class="flash-messages">
+          {% for message in messages %}
+            <li class="flash-item">{{ message }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+
+    <div id="welcome-section">
+        <h1>Добро пожаловать!</h1>
+        <p>Мгновенное общение с друзьями и семьей. Быстро, безопасно и легко.</p>
+        <button class="btn btn-primary" onclick="showSection('login-section')">Вход</button>
+        <a href="{{ url_for('qw') }}" class="btn btn-outline">Пользовательское соглашение</a>
+        <a href="{{ url_for('about') }}" class="btn btn-outline">О нас</a>
+    </div>
+
+    <div id="login-section" class="hidden">
+        <h1>Вход</h1>
+        <form action="/login" method="POST">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <div class="input-wrapper">
+                    <input type="password" id="login-pass" name="password" required>
+                    <i class="fa-regular fa-eye toggle-password" onclick="togglePass('login-pass', this)"></i>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Войти</button>
+        </form>
+        <div class="toggle-link">
+            Нет аккаунта? <span onclick="showSection('register-section')">Создать</span><br><br>
+            <span style="color: #666;" onclick="showSection('welcome-section')">← Назад</span>
+        </div>
+    </div>
+
+    <div id="register-section" class="hidden">
+        <h1>Регистрация</h1>
+        <form id="reg-form" action="/register" method="POST" onsubmit="return validatePasswords()">
+            <div class="form-group">
+                <label>Имя пользователя</label>
+                <input type="text" name="username" required>
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" name="email" required>
+            </div>
+            <div class="form-group">
+                <label>Пароль</label>
+                <div class="input-wrapper">
+                    <input type="password" id="reg-pass" name="password" required>
+                    <i class="fa-regular fa-eye toggle-password" onclick="togglePass('reg-pass', this)"></i>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Повторите пароль</label>
+                <input type="password" id="reg-confirm" required>
+                <div id="password-error" class="error-msg">Пароли не совпадают!</div>
+            </div>
+            <div class ="form-group">
+                <input type="checkbox" name="agreement" id="agreement" required>
+                 <label for="agreement">Я согласен с <a href="/qw" target="_blank">пользовательским соглашением</a></label>
+            </div>
+            <button type="submit" class="btn btn-success">Зарегистрироваться</button>
+        </form>
+        <div class="toggle-link">
+            Есть аккаунт? <span onclick="showSection('login-section')">Войти</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showSection(sectionId) {
+        ['welcome-section', 'login-section', 'register-section'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(sectionId).classList.remove('hidden');
+    }
+
+    function togglePass(inputId, icon) {
+        const input = document.getElementById(inputId);
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace('fa-regular', 'fa-solid');
+            icon.classList.replace('fa-eye', 'fa-eye-slash');
+        } else {
+            input.type = "password";
+            icon.classList.replace('fa-solid', 'fa-regular');
+            icon.classList.replace('fa-eye-slash', 'fa-eye');
+        }
+    }
+
+    function validatePasswords() {
+        const pass = document.getElementById('reg-pass').value;
+        const confirm = document.getElementById('reg-confirm').value;
+        const errorDiv = document.getElementById('password-error');
+        if (pass !== confirm) {
+            errorDiv.style.display = 'block';
+            return false;
+        }
+        return true;
+    }
+
+        window.onload = function() {
+        // Проверяем, есть ли в адресе ?show=login
+        const urlParams = new URLSearchParams(window.location.search);
+        const sectionToShow = urlParams.get('show');
+
+        if (sectionToShow === 'login') {
+            // Вызываем вашу функцию открытия секции
+            showSection('login-section');
+        }
+    };
+
+    // Ваша существующая функция (убедитесь, что она выглядит примерно так)
+    function showSection(id) {
+        // Скрываем все секции
+        document.querySelectorAll('div[id$="-section"]').forEach(div => {
+            div.classList.add('hidden');
+        });
+        // Показываем нужную
+        document.getElementById(id).classList.remove('hidden');
+    }
+</script>
+</body>
+</html>

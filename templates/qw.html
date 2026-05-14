@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пользовательское соглашение — MMDK</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+    <style>
+         body {
+        font-family: -apple-system, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        background-color: #f9f9f9;
+        font-size: 16px; /* УВЕЛИЧЕНО */
+    }
+        .container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+        }
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: #0056b3; }
+
+        h1 { color: #1a1a1a; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        h2 { color: #2c3e50; margin-top: 30px; font-size: 1.4em; }
+        .date { color: #888; font-style: italic; margin-bottom: 30px; font-size: 0.9em; }
+
+        ul { padding-left: 20px; }
+        li { margin-bottom: 10px; }
+
+        .important {
+            background-color: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            margin: 20px 0;
+            font-size: 0.95em;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 0.85em;
+            color: #888;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <a href="/" class="back-link">← Назад</a>
+
+    <h1>Пользовательское соглашение</h1>
+
+    <p class="date">Последнее обновление: {{ current_date }}</p>
+
+    <p>Используя мессенджер <strong>MMDK</strong>, вы автоматически соглашаетесь с данными условиями. Пожалуйста, внимательно ознакомьтесь с ними перед началом работы.</p>
+
+    <h2>1. Общие положения</h2>
+    <p>Настоящее Соглашение регулирует отношения между Администрацией Сервиса и Пользователем. Использование функций Сервиса означает полное принятие условий оферты.</p>
+
+    <h2>2. Регистрация и безопасность</h2>
+    <ul>
+        <li>Регистрация в Сервисе осуществляется исключительно по адресу <strong>электронной почты (E-mail)</strong>.</li>
+        <li>Пользователь несет единоличную ответственность за сохранность своего пароля и конфиденциальность учетных данных.</li>
+        <li>Сервис предназначен для использования лицами, достигшими возраста <strong>13 лет</strong>.</li>
+    </ul>
+
+    <h2>3. Конфиденциальность и данные</h2>
+    <p>Мы уважаем право на тайну переписки. Основные принципы обработки данных:</p>
+    <ul>
+        <li><strong>Шифрование:</strong> Передача сообщений осуществляется по защищенным протоколам (TLS/SSL).</li>
+        <li><strong>Доступ к данным:</strong> Сервис может запрашивать доступ к списку контактов исключительно для упрощения поиска других пользователей внутри MMDK.</li>
+    </ul>
+
+    <h2>4. Правила поведения и модерация</h2>
+    <p>В рамках использования Сервиса запрещено:</p>
+    <ul>
+        <li>Рассылка спама, рекламных сообщений и вредоносного программного обеспечения.</li>
+        <li>Публикация материалов, нарушающих действующее законодательство или авторские права.</li>
+        <li>Оскорбительное поведение, разжигание ненависти и дискриминация в любых проявлениях.</li>
+    </ul>
+
+    <div class="important">
+        <strong>Обратите внимание:</strong> Администрация оставляет за собой право в одностороннем порядке <strong>ограничить доступ к аккаунту</strong> или заблокировать его при обнаружении нарушений данных правил.
+    </div>
+
+    <h2>5. Отказ от ответственности</h2>
+    <p>Сервис предоставляется по принципу "как есть". Разработчики не гарантируют бесперебойную работу в случае форс-мажорных обстоятельств или действий третьих лиц.</p>
+
+    <div class="footer">
+        &copy; {{ current_year }} MMDK Messenger. Все права защищены.
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Чат с {{ other_user.username }}</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.png') }}" type="image/png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #e5ddd5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            height: 85px;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.25);
+        }
+
+        .chat-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: normal;
+        }
+        .status-badge.online {
+            background: rgba(76, 175, 80, 0.3);
+            color: #4caf50;
+        }
+        .status-badge.idle {
+            background: rgba(255, 152, 0, 0.3);
+            color: #ff9800;
+        }
+        .status-badge.dnd {
+            background: rgba(244, 67, 54, 0.3);
+            color: #f44336;
+        }
+        .status-badge.offline {
+            background: rgba(158, 158, 158, 0.3);
+            color: #9e9e9e;
+        }
+
+        /* Остальные стили остаются без изменений */
+        .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+        .msg { max-width: 70%; padding: 10px 14px; border-radius: 18px; font-size: 0.9rem; box-shadow: 0 1px 2px rgba(0,0,0,0.1); word-wrap: break-word; position: relative; }
+        .msg:hover .msg-actions { display: flex; }
+        .msg-actions { position: absolute; top: -20px; right: 0; display: none; gap: 8px; background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 20px; z-index: 10; }
+        .msg-actions button { background: none; border: none; color: white; cursor: pointer; font-size: 11px; padding: 2px 6px; border-radius: 10px; }
+        .msg-actions button:hover { background: rgba(255,255,255,0.2); }
+        .sent { align-self: flex-end; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border-bottom-right-radius: 4px; }
+        .received { align-self: flex-start; background: white; border-bottom-left-radius: 4px; }
+        .chat-img { max-width: 200px; border-radius: 12px; margin-top: 5px; cursor: pointer; display: block; }
+        .input-area { padding: 15px; background: white; border-top: 1px solid #ddd; display: flex; gap: 10px; align-items: center; }
+        .input-area input[type="text"] { flex: 1; padding: 12px 18px; border-radius: 25px; border: 1px solid #ddd; outline: none; background: #f0f2f5; font-size: 0.9rem; }
+        .attach-btn, .send-btn { background: none; border: none; font-size: 1.3rem; cursor: pointer; padding: 8px 12px; border-radius: 50%; transition: 0.2s; }
+        .attach-btn:hover, .send-btn:hover { background: #f0f0f0; }
+        .send-btn { color: #667eea; }
+        .read-status { font-size: 10px; opacity: 0.7; margin-top: 4px; text-align: right; }
+        .reply-bar { background: #f0f2f5; padding: 8px 15px; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #ddd; }
+        .reply-bar span { font-size: 12px; color: #667eea; }
+        .cancel-reply { background: none; border: none; color: #999; cursor: pointer; font-size: 14px; }
+
+        /* Стили скролла */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 10px; }
+    </style>
+</head>
+<body>
+    <div class="chat-header">
+        <div class="chat-title">
+            <div class="user-avatar">
+                {{ other_user.username[0].upper() }}
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem;">{{ other_user.username }}</h3>
+                <div id="onlineStatus" style="font-size: 0.7rem; margin-top: 4px;">
+                    <span class="status-badge online">🟢 Онлайн</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="messages-area" id="box">
+        {% for m in messages %}
+        <div class="msg {% if m.sender_id == session.user_id %}sent{% else %}received{% endif %}"
+             data-id="{{ m.id }}" data-sender="{{ m.sender_id }}">
+            <div class="text">
+                {% if m.message.startswith('[IMAGE]') %}
+                    <img src="/static/uploads/{{ m.message[7:] }}" class="chat-img" onclick="window.open(this.src)">
+                {% else %}{{ m.message }}{% endif %}
+            </div>
+            {% if m.sender_id == session.user_id %}
+                <div class="read-status">
+                    {% if m.is_read %}✓✓ Прочитано{% else %}✓ Отправлено{% endif %}
+                </div>
+            {% endif %}
+            <div class="msg-actions">
+                <button onclick="replyToMessage({{ m.id }}, `{{ m.message|replace('`', '\\`')|truncate(50) }}`, {{ m.sender_id }})">
+                    <i class="fas fa-reply"></i>
+                </button>
+                {% if m.sender_id == session.user_id %}
+                    <button onclick="deleteMessage({{ m.id }})">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="reply-bar" id="replyBar" style="display: none;">
+        <span><i class="fas fa-reply"></i> Ответ: <span id="replyToText"></span></span>
+        <button class="cancel-reply" onclick="cancelReply()">✕</button>
+    </div>
+
+    <div class="input-area">
+        <input type="file" id="fInp" style="display:none" accept="image/jpeg,image/png,image/gif,image/webp">
+        <button class="attach-btn" onclick="document.getElementById('fInp').click()">
+            <i class="fas fa-paperclip"></i>
+        </button>
+        <input type="text" id="msgInp" placeholder="Сообщение..." autocomplete="off">
+        <button class="send-btn" onclick="send()">
+            <i class="fas fa-paper-plane"></i>
+        </button>
+    </div>
+
+<script>
+    const box = document.getElementById('box');
+    const inp = document.getElementById('msgInp');
+    const otherId = {{ other_user.id }};
+    const myId = {{ session.user_id }};
+    let lastId = 0;
+    let visibleMessages = new Set();
+    let replyToId = null;
+    let replyToText = '';
+
+    function updateLastId() {
+        const msgs = document.querySelectorAll('.msg');
+        if (msgs.length > 0) {
+            lastId = parseInt(msgs[msgs.length - 1].getAttribute('data-id')) || 0;
+        }
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if (m === '&') return '&amp;';
+            if (m === '<') return '&lt;';
+            if (m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    async function markAsRead(messageId) {
+        if (visibleMessages.has(messageId)) return;
+        visibleMessages.add(messageId);
+        try {
+            await fetch('/mark_as_read', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: messageId })
+            });
+        } catch(e) {}
+    }
+
+    async function markMessagesAsRead() {
+        try {
+            const r = await fetch(`/mark_messages_read/${otherId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (r.ok) {
+                document.querySelectorAll('.msg[data-sender="' + myId + '"] .read-status').forEach(status => {
+                    if (status.innerHTML.includes('Отправлено')) {
+                        status.innerHTML = '✓✓ Прочитано';
+                    }
+                });
+            }
+        } catch(e) {}
+    }
+
+    async function deleteMessage(msgId) {
+        if (!confirm('🗑️ Удалить это сообщение?')) return;
+        try {
+            const res = await fetch('/delete_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message_id: msgId })
+            });
+            const result = await res.json();
+            if (result.success) {
+                const msgElement = document.querySelector(`.msg[data-id="${msgId}"]`);
+                if (msgElement) msgElement.remove();
+            } else {
+                alert(result.error || 'Ошибка удаления');
+            }
+        } catch(e) {
+            alert('❌ Ошибка сети');
+        }
+    }
+
+    function replyToMessage(msgId, text, senderId) {
+        replyToId = msgId;
+        replyToText = text.length > 50 ? text.substring(0, 47) + '...' : text;
+        document.getElementById('replyToText').innerText = replyToText;
+        document.getElementById('replyBar').style.display = 'flex';
+        inp.focus();
+    }
+
+    function cancelReply() {
+        replyToId = null;
+        replyToText = '';
+        document.getElementById('replyBar').style.display = 'none';
+    }
+
+    function appendMessage(data) {
+        if (document.querySelector(`[data-id="${data.id}"]`)) return;
+        const isMe = data.sender_id == myId;
+        const d = document.createElement('div');
+        d.className = 'msg ' + (isMe ? 'sent' : 'received');
+        d.setAttribute('data-id', data.id);
+        d.setAttribute('data-sender', data.sender_id);
+        let content = data.message.startsWith('[IMAGE]')
+            ? `<img src="/static/uploads/${data.message.substring(7)}" class="chat-img" onclick="window.open(this.src)">`
+            : escapeHtml(data.message);
+        let readHtml = '';
+        if (isMe) {
+            readHtml = `<div class="read-status">✓ Отправлено</div>`;
+        }
+        d.innerHTML = `
+            <div class="text">${content}</div>
+            ${readHtml}
+            <div class="msg-actions">
+                <button onclick="replyToMessage(${data.id}, \`${content.replace(/`/g, '\\`')}\`, ${data.sender_id})">
+                    <i class="fas fa-reply"></i>
+                </button>
+                ${isMe ? `<button onclick="deleteMessage(${data.id})"><i class="fas fa-trash-alt"></i></button>` : ''}
+            </div>
+        `;
+        box.appendChild(d);
+        box.scrollTop = box.scrollHeight;
+        lastId = data.id;
+        if (!isMe) {
+            markAsRead(data.id);
+        }
+        if (data.is_read && isMe) {
+            const readSpan = d.querySelector('.read-status');
+            if (readSpan) readSpan.innerHTML = '✓✓ Прочитано';
+        }
+    }
+
+    async function loadMessages() {
+        try {
+            const r = await fetch(`/get_private_messages/${otherId}?last_id=${lastId}`);
+            const msgs = await r.json();
+            let hasNewFromOther = false;
+            for (const m of msgs) {
+                appendMessage(m);
+                if (m.sender_id != myId) hasNewFromOther = true;
+            }
+            if (hasNewFromOther) {
+                await markMessagesAsRead();
+            }
+        } catch(e) {}
+    }
+
+async function send() {
+    let text = inp.value.trim();
+    if (!text && !replyToId) return;
+
+    try {
+        if (replyToId) {
+            await fetch('/reply_to_message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    original_msg_id: replyToId,
+                    reply_text: text,
+                    receiver_id: otherId
+                })
+            });
+            cancelReply();
+        } else {
+            // Отправка личного сообщения
+            const res = await fetch('/send_msg', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ receiver_id: otherId, message: text })
+            });
+
+            if (!res.ok) {
+                console.error('Ошибка отправки');
+                return;
+            }
+        }
+
+        // Обновляем активность
+        fetch('/update_activity', { method: 'POST' }).catch(e => console.log);
+
+        inp.value = '';
+        window.parent.postMessage('refresh_sidebar', '*');
+    } catch(e) {
+        console.error('Ошибка отправки:', e);
+        alert('❌ Ошибка отправки сообщения');
+    }
+}
+
+    async function uploadFile() {
+        const fInp = document.getElementById('fInp');
+        const file = fInp.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            alert('❌ Можно загружать только изображения');
+            fInp.value = '';
+            return;
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            alert('❌ Файл слишком большой! Максимум 5MB');
+            fInp.value = '';
+            return;
+        }
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('receiver_id', otherId);
+        await fetch('/upload_file', { method: 'POST', body: fd });
+        fetch('/update_activity', { method: 'POST' });
+        fInp.value = '';
+    }
+
+// Загрузка статуса верификации собеседника
+async function loadVerificationStatus() {
+    try {
+        const res = await fetch(`/get_verification_status?user_id=${otherId}`);
+        const data = await res.json();
+
+        const titleElement = document.querySelector('.chat-header h3');
+        if (titleElement && data.is_verified) {
+            // Добавляем галочку после имени
+            if (!titleElement.innerHTML.includes('fa-check-circle')) {
+                titleElement.innerHTML = `${other_user.username} <i class="fas fa-check-circle" style="color: #4caf50; font-size: 14px;" title="Верифицированный пользователь"></i>`;
+            }
+        }
+    } catch(e) {
+        console.error(e);
+    }
+}
+
+    async function loadUserStatus() {
+        try {
+            const r = await fetch('/get_users_status?nocache=' + Date.now());
+            const statuses = await r.json();
+            const status = statuses[otherId];
+            const statusDiv = document.getElementById('onlineStatus');
+            if (statusDiv) {
+                let statusText = '';
+                let statusClass = '';
+                if (status === 'online') {
+                    statusText = '🟢 Онлайн';
+                    statusClass = 'online';
+                } else if (status === 'idle') {
+                    statusText = '🌙 Не активен';
+                    statusClass = 'idle';
+                } else if (status === 'dnd') {
+                    statusText = '🔴 Не беспокоить';
+                    statusClass = 'dnd';
+                } else {
+                    statusText = '⚫ Офлайн';
+                    statusClass = 'offline';
+                }
+                statusDiv.innerHTML = `<span class="status-badge ${statusClass}">${statusText}</span>`;
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки статуса:', e);
+        }
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const msg = entry.target;
+                const senderId = msg.getAttribute('data-sender');
+                const msgId = msg.getAttribute('data-id');
+                if (senderId && senderId != myId && msgId) {
+                    markAsRead(msgId);
+                }
+            }
+        });
+    }, { threshold: 0.5 });
+
+    function observeMessages() {
+        document.querySelectorAll('.msg').forEach(msg => observer.observe(msg));
+    }
+
+    setInterval(loadMessages, 2000);
+    setInterval(loadUserStatus, 5000);
+    loadUserStatus(); // сразу при загрузке
+
+    inp.onkeypress = e => { if(e.key === 'Enter') send() };
+    document.getElementById('fInp').onchange = uploadFile;
+
+    window.onload = () => {
+        updateLastId();
+        box.scrollTop = box.scrollHeight;
+        observeMessages();
+        markMessagesAsRead();
+    };
+
+    const mutationObserver = new MutationObserver(() => observeMessages());
+    mutationObserver.observe(box, { childList: true, subtree: true });
+</script>
+</body>
+</html>
